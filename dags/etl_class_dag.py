@@ -10,8 +10,12 @@ from airflow.utils.dates import days_ago
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(parent_dir)
 
-# Import the dataProcessor class from the parent directory
+# Import the dataProcessor and ml classes from the parent directory
 from libraries.data_process import dataProcessor
+from libraries.parent_models import *
+from libraries.RF_models import *
+from libraries.fnn_models import *
+from libraries.lstm_models import *
 
 def load_data_to_postgres():
     """
@@ -88,6 +92,50 @@ def data_transformation_and_save(postgres_params, source_table):
 
     print(f"Data transformation and saving to PostgreSQL table '{source_table}' completed successfully!")
 
+
+def classification_models(postgres_params, source_table):
+    # Create a connection to the PostgreSQL database
+    db_user = postgres_params['POSTGRES_USER']
+    db_password = postgres_params['POSTGRES_PASSWORD']
+    db_host = postgres_params['POSTGRES_HOST']
+    db_port = postgres_params['POSTGRES_PORT']
+    db_name = postgres_params['POSTGRES_DB']
+    
+    engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+
+    # Query to fetch data from the source_table
+    query = f"SELECT * FROM {source_table}"
+    mining_df = pd.read_sql(query, engine)
+
+    target_column = 'Daily_Actual_Demand'
+    random_state = 42
+
+    rf_model_instance = rf_model(mining_df, target_column, random_state)
+    fnn_model_instance = fnn_model(mining_df, target_column, random_state)
+    lstm_model_instance = lstm_model(mining_df, target_column, random_state)
+
+    indices_rf, best_model_rf, train_loss_rf, test_loss_rf, confusion_mat_rf, best_train_error_rf, best_test_error_rf, best_iteration_rf = rf_model_instance.class_main()
+    indices_fnn, best_model_fnn, train_loss_fnn, test_loss_fnn, confusion_mat_fnn, best_train_error_fnn, best_test_error_fnn, best_iteration_fnn = fnn_model_instance.class_main()
+    indices_lstm, best_model_lstm, train_loss_lstm, test_loss_lstm, confusion_mat_lstm, best_train_error_lstm, best_test_error_lstm, best_iteration_lstm = lstm_model_instance.class_main()
+
+    results = pd.DataFrame({
+        'model': ['rf', 'fnn', 'lstm'],
+        'indices': [indices_rf, indices_fnn, indices_lstm],
+        'best_model': [best_model_rf, best_model_fnn, best_model_lstm],
+        'train_loss': [train_loss_rf, train_loss_fnn, train_loss_lstm],
+        'test_loss': [test_loss_rf, test_loss_fnn, test_loss_lstm],
+        'confusion_matrix': [confusion_mat_rf, confusion_mat_fnn, confusion_mat_lstm],
+        'best_train_error': [best_train_error_rf, best_train_error_fnn, best_train_error_lstm],
+        'best_test_error': [best_test_error_rf, best_test_error_fnn, best_test_error_lstm],
+        'best_iteration': [best_iteration_rf, best_iteration_fnn, best_iteration_lstm]
+    })
+
+    # Save the results to a new table in PostgreSQL
+    results.to_sql('classification_results', engine, if_exists='replace', index=False)
+    print("Classification results saved successfully!")
+
+
+
 # Define default arguments for the DAG
 default_args = {
     'owner': 'airflow',
@@ -127,5 +175,23 @@ data_transformation_task = PythonOperator(
     dag=dag,
 )
 
+# Define the task for Classification data and saving it to PostgreSQL
+data_classification_task = PythonOperator(
+    task_id='Classification and saving data',
+    op_kwargs={
+        'postgres_params': {
+            'POSTGRES_USER': os.getenv('POSTGRES_USER'),
+            'POSTGRES_PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+            'POSTGRES_HOST': 'postgres',
+            'POSTGRES_PORT': '5432',
+            'POSTGRES_DB': os.getenv('POSTGRES_DB'),
+        },
+        'source_table': 'mining_table',  
+    },
+    
+    dag=dag,
+)
+
+
 # Set task dependencies
-load_data_task >> data_transformation_task
+load_data_task >> data_transformation_task >> data_classification_task

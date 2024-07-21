@@ -27,7 +27,7 @@ class parent_model:
     # Save Images function
     def save_images(self, folder, filename):
         # Save the figure as an image in the "Images" folder
-        output_folder = f'Images/{folder}'
+        output_folder = f'images/{folder}'
         os.makedirs(output_folder, exist_ok=True)
         output_file = os.path.join(output_folder, f'{filename}.png')
         plt.savefig(output_file, dpi=300)
@@ -56,8 +56,8 @@ class parent_model:
 #######################################################################Classification Visualization########################################################################
     # plot_errors of classification
     def plot_errors_class(self, training_errors, test_errors, best_iteration, best_train_error, best_test_error, model):
+        
         sns.set()
-
         sns.set_style("whitegrid")
         sns.set_context("poster", font_scale=1.5)
 
@@ -78,16 +78,17 @@ class parent_model:
         plt.yticks(y_ticks_sparse) 
         plt.legend()
         self.save_images(model, 'Cl_Iterations')
-        plt.show()
 
         print("Lowest Training Error (Log Loss):", best_train_error)
         print("Lowest Test Error (Log Loss):", best_test_error)
         print("Best Iteration:", best_iteration)
+        
+        return best_train_error, best_test_error, best_iteration
 
     # plot_auc of classification
     def plot_auc(self, fpr, tpr, auc_score, model):
+        
         sns.set()
-
         sns.set_style("whitegrid")
         sns.set_context("poster", font_scale=1.5) 
         plt.figure(figsize=(10, 8))
@@ -97,12 +98,11 @@ class parent_model:
         plt.title('ROC Curve')
         plt.legend()
         self.save_images(model, 'ROC')
-        plt.show()
 
     # plot_confusion_matrix of classification
     def plot_confusion_matrix(self, confusion_mat, model):
+       
         sns.set()
-
         sns.set_style("whitegrid")
         sns.set_context("poster", font_scale=1.5) 
         plt.figure(figsize=(15, 10))
@@ -112,9 +112,10 @@ class parent_model:
         plt.xlabel('Predicted Labels')
         plt.ylabel('True Labels')
         self.save_images(model, 'Confusion')
-        plt.show()
+
     # calculate_metrics of classification
     def calculate_metrics(self, y_test, best_y_test_proba, best_y_test_pred, model):
+       
         auc_score = roc_auc_score(y_test, best_y_test_proba[:, 1])
         accuracy = accuracy_score(y_test, best_y_test_pred)
         f1 = f1_score(y_test, best_y_test_pred)
@@ -163,7 +164,6 @@ class parent_model:
         plt.xlabel('Importance')
         plt.ylabel('Feature')
         self.save_images(model, 'Feature Importance')
-        plt.show()
 
     # plot_feature_importance of regression for FNN
     def plot_feature_importance(self, feature_importance, feature_names, model):
@@ -183,7 +183,6 @@ class parent_model:
         plt.xlabel('Importance')
         plt.ylabel('Feature')
         self.save_images(model, 'Feature Importance')
-        plt.show()
 
    # plot_feature_importance of regression for LSTM
     def plot_feature_weights_lstm(self, best_model, X_test, y_test, feature_names, model):
@@ -204,7 +203,6 @@ class parent_model:
         plt.xlabel('Importance')
         plt.ylabel('Feature')
         self.save_images(model, 'Feature Importance')
-        plt.show()
 
     # plot_errors_actual demand of regression iteration approach
     def plot_errors_actual(self, test_errors, training_errors, best_iteration, best_test_error, best_train_error, model):
@@ -235,11 +233,12 @@ class parent_model:
         plt.yticks(y_ticks, y_tick_labels)  
         plt.legend()
         self.save_images(model, 'Iterations')  
-        plt.show()
 
         print("Lowest Training Error (MAE):", best_train_error)
         print("Lowest Test Error (MAE):", best_test_error)
         print("Best Iteration:", best_iteration)
+
+        return best_train_error, best_test_error, best_iteration
 
     # plot_residuals of regression
     def plot_residuals(self, y_true, y_pred, model):
@@ -254,7 +253,6 @@ class parent_model:
         plt.xlabel('Predicted Values')
         plt.ylabel('Residuals')
         self.save_images(model, 'Residuals')
-        plt.show()
 
 #######################################################################Classification_Main########################################################################
 
@@ -305,9 +303,9 @@ class parent_model:
             print("X Columns: ", X_train.columns)
             print("Target Column: ", self.target_column)
 
-            indices, best_model, y_test, test_predictions, confusion_mat = self.temporal_prob_function(X_train, y_train, X_test, y_test)
-            self.iteration_prob_function(best_model, X_train, y_train, X_test, y_test)
-            return indices, best_model, y_test, test_predictions, confusion_mat
+            indices, best_model, train_loss, test_loss, confusion_mat = self.temporal_prob_function(X_train, y_train, X_test, y_test)
+            best_train_error, best_test_error, best_iteration = self.iteration_prob_function(best_model, X_train, y_train, X_test, y_test)
+            return indices, best_model,  train_loss, test_loss, confusion_mat, best_train_error, best_test_error, best_iteration
 
         else:
             print("Column 'PN' not found in the DataFrame.")
@@ -368,12 +366,13 @@ class parent_model:
             print("X Columns: ", X_train.columns)
             print("Target Column: ", target_column)
 
-            best_model, result_df = self.temporal_reg_function(X_train = X_train, y_train= y_train,
+            best_model, result_df, train_mae, test_mae = self.temporal_reg_function(X_train = X_train, y_train= y_train,
                                                                                X_test = X_test, y_test = y_test, dates = date_test, pn = pn_test, indices = indices)
-            self.iteration_reg_function(best_model = best_model, X_train = X_train, y_train = y_train, X_test = X_test,
+            best_train_error, best_test_error, best_iteration = self.iteration_reg_function(best_model = best_model, 
+                                                                                            X_train = X_train, y_train = y_train, X_test = X_test,
                                          y_test = y_test, indices= indices)
             # print("result_df:", result_df.head())
-            return indices, best_model, result_df
+            return indices, best_model, result_df, train_mae, test_mae, best_train_error, best_test_error, best_iteration
             
         else:
             print("Column 'PN' not found in the DataFrame.")

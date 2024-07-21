@@ -16,7 +16,7 @@ from sklearn.model_selection import  TimeSeriesSplit
 
 import pandas as pd
 import os
-from Libraries.parent_models import *
+from parent_models import *
 ###############################################################################################################################################
 # def create_lstm_model(input_shape, hidden_layer_size=50, activation='relu', alpha=0.001, learning_rate_init=0.01):
 #         model = Sequential()
@@ -80,12 +80,12 @@ class lstm_model(parent_model):
         test_predictions = best_model.predict(X_test_lstm)
 
         # Calculate MAE for training set
-        train_mae = log_loss(y_train, train_predictions)
+        train_loss = log_loss(y_train, train_predictions)
         # Calculate MAE for test set
-        test_mae = log_loss(y_test, test_predictions)
+        test_loss = log_loss(y_test, test_predictions)
 
-        print("Log Loss - Training Set:", train_mae)
-        print("Log Loss - Test Set:", test_mae)
+        print("Log Loss - Training Set:", train_loss)
+        print("Log Loss - Test Set:", test_loss)
 
         # Get feature importances
         self.plot_feature_weights_lstm(best_model, X_test_lstm, y_test, X_train.columns, "LSTM")
@@ -109,7 +109,7 @@ class lstm_model(parent_model):
 
         # Get indices where predicted probabilities are 0
         indices = np.where(all_y_pred_proba == 0)[0]
-        return indices, best_model, y_test, test_predictions, confusion_mat
+        return indices, best_model, train_loss, test_loss, confusion_mat
 
     def iteration_prob_function(self, best_model, X_train_lstm, y_train, X_test, y_test):
         # Define lists to store losses
@@ -164,7 +164,9 @@ class lstm_model(parent_model):
                 best_test_error = test_loss
                 best_iteration = i + 1
 
-        self.plot_errors_class(test_error, train_error, best_iteration, best_test_error, best_train_error, "LSTM")
+        best_train_error, best_test_error, best_iteration = self.plot_errors_class(test_error, train_error, 
+                                                                                   best_iteration, best_test_error, best_train_error, "LSTM")
+        return best_train_error, best_test_error, best_iteration
 
 
 
@@ -251,7 +253,7 @@ class lstm_model(parent_model):
                 'test_predictions': test_predictions
             })
 
-            return best_model, result_df
+            return best_model, result_df, train_mae, test_mae
     
     def iteration_reg_function(self, best_model, X_train, y_train, X_test, y_test, indices=None):
         # Define lists to store losses
@@ -309,9 +311,12 @@ class lstm_model(parent_model):
                 best_iteration = i + 1
 
         if indices is not None:
-            self.plot_errors_actual(test_error, train_error, best_iteration, best_test_error, best_train_error, "LSTM")
+            best_train_error, best_test_error, best_iteration = self.plot_errors_actual(test_error, train_error, 
+                                                                                        best_iteration, best_test_error, best_train_error, "LSTM")
         else:
-            self.plot_errors_actual(train_error, test_error, best_iteration, best_train_error, best_test_error, "LSTM")
+            best_train_error, best_test_error, best_iteration = self.plot_errors_actual(train_error, test_error, 
+                                                                                        best_iteration, best_train_error, best_test_error, "LSTM")
+            return best_train_error, best_test_error, best_iteration
 
 
         

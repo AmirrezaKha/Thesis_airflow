@@ -13,7 +13,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.neural_network import MLPClassifier
 import os
 
-from Libraries.parent_models import *
+from parent_models import *
 #######################################################################class FNN_model########################################################################
 class fnn_model(parent_model):
     def __init__(self, mining_df, target_column, random_state):
@@ -57,12 +57,12 @@ class fnn_model(parent_model):
             test_predictions = best_model.predict(X_test)
 
             # Calculate MAE for training set
-            train_mae = log_loss(y_train, train_predictions)
+            train_loss = log_loss(y_train, train_predictions)
             # Calculate MAE for test set
-            test_mae = log_loss(y_test, test_predictions)
+            test_loss = log_loss(y_test, test_predictions)
 
-            print("Log Loss - Training Set:", train_mae)
-            print("Log Loss - Test Set:", test_mae)
+            print("Log Loss - Training Set:", train_loss)
+            print("Log Loss - Test Set:", test_loss)
 
             # Get feature importances
             self.plot_feature_weights(best_model, X_train.columns, "FNN")
@@ -88,7 +88,7 @@ class fnn_model(parent_model):
 
             # Get indices where predicted probabilities are 0
             indices = np.where(all_y_pred_proba == 0)[0]
-            return indices, best_model, y_test, test_predictions, confusion_mat
+            return indices, best_model, train_loss, test_loss, confusion_mat
     
 
     
@@ -154,7 +154,9 @@ class fnn_model(parent_model):
                     best_test_error = test_error
                     best_iteration = i + 1
 
-            self.plot_errors_class(training_errors, test_errors, best_iteration, best_train_error, best_test_error, "FNN")
+            best_train_error, best_test_error, best_iteration = self.plot_errors_class(training_errors, 
+                                                                                    test_errors, best_iteration, best_train_error, best_test_error, "FNN")
+            return best_train_error, best_test_error, best_iteration
 
 
 #######################################################################FNN_model_regression########################################################################
@@ -217,7 +219,7 @@ class fnn_model(parent_model):
                 'test_predictions': test_predictions
             })
 
-            return best_model, result_df
+            return best_model, result_df, train_mae, test_mae
 
     def iteration_reg_function(self, best_model, X_train, y_train, X_test, y_test, indices=None):
 
@@ -280,4 +282,6 @@ class fnn_model(parent_model):
                     best_test_error = test_error
                     best_iteration = i + 1
 
-            self.plot_errors_actual(test_errors, training_errors, best_iteration, best_test_error, best_train_error, "FNN")
+            best_train_error, best_test_error, best_iteration = self.plot_errors_actual(test_errors, training_errors, best_iteration, 
+                                                                                        best_test_error, best_train_error, "FNN")
+            return best_train_error, best_test_error, best_iteration
