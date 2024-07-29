@@ -72,6 +72,6 @@ Open your web browser and go to [http://localhost:8080.](http://localhost:8080.)
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 
-This document provides a comprehensive overview and setup instructions for your Master Thesis Project, ensuring that all necessary details are included.
+This document provides a comprehensive overview and setup instructions for Master Thesis Project, ensuring that all necessary details are included.
 
 
