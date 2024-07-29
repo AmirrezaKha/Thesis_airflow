@@ -22,33 +22,30 @@ For security purposes, usernames and passwords for these applications are manage
 
 These variables are defined in the `.env` file:
 
-   - `POSTGRES_USER=`
-   - `POSTGRES_PASSWORD=`
-   - `POSTGRES_DB=`
-   - `AIRFLOW_IMAGE_NAME=extending_airflow`
-   - `AIRFLOW_UID=`
-   - `AIRFLOW_GID=`
-   - `_AIRFLOW_WWW_USER_USERNAME=`
-   - `_AIRFLOW_WWW_USER_PASSWORD=`
+- `POSTGRES_USER=`
+- `POSTGRES_PASSWORD=`
+- `POSTGRES_DB=`
+- `AIRFLOW_IMAGE_NAME=extending_airflow`
+- `AIRFLOW_UID=`
+- `AIRFLOW_GID=`
+- `_AIRFLOW_WWW_USER_USERNAME=`
+- `_AIRFLOW_WWW_USER_PASSWORD=`
 
-1. **Install the required Python libraries:**
+3. **Install the required Python libraries:**
 
 Create a requirements.txt file with the following content:
 
-   - `statsmodels==0.13.2`
-   - `scikit-learn==1.0.2`
-   - `pandas==1.3.5`
-   - `numpy>=1.22,<1.24.4`
-   - `matplotlib==3.5.2`
-   - `seaborn==0.11.2`
-   - `tensorflow==2.8.0`
-   - `protobuf==3.20.3`
+- `statsmodels==0.13.2`
+- `scikit-learn==1.0.2`
+- `pandas==1.3.5`
+- `numpy>=1.22,<1.24.4`
+- `matplotlib==3.5.2`
+- `seaborn==0.11.2`
+- `tensorflow==2.8.0`
+- `protobuf==3.20.3`
 
-1. **Dockerfile setup:**
-
-Create a Dockerfile with the following content:
-
-   ```dockerfile
+4. **Dockerfile setup:**
+      ```sh
    FROM apache/airflow:2.7.0
 
    # Upgrade pip
@@ -57,21 +54,18 @@ Create a Dockerfile with the following content:
    # Copy and install requirements
    COPY requirements.txt /requirements.txt
    RUN pip install -r /requirements.txt
-
 5. **Build and run the Docker containers:**
-
-Ensure Docker is installed and running on your system. Then, execute:
-   ```bash
-   docker-compose up -d
-
+   Ensure Docker is installed and running on your system. Then, execute:
+      ```bash
+      docker-compose up -d
 6. **Access Apache Airflow:**
 
 Open your web browser and go to [http://localhost:8080.](http://localhost:8080.) Log in with the credentials you defined in the .env file.
 
 ## Additional Information
 
-    - Ensure that your Docker and Docker Compose are properly installed and configured.
-    - Follow best practices for managing your environment variables and secrets.
+ - Ensure that your Docker and Docker Compose are properly installed and configured.
+ - Follow best practices for managing your environment variables and secrets.
 
 ## License
 
