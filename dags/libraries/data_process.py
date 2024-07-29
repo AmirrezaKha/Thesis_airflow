@@ -116,7 +116,7 @@ class dataProcessor:
             self.mining_df[col_name_avg] = self.mining_df[col_name_sum] / self.mining_df[col_name_count]
             self.mining_df.drop(columns=[col_name_sum, col_name_count], inplace=True)
 
-    def calculate_days_since_last_non_zero_demand(group):
+    def calculate_days_since_last_non_zero_demand(self, group):
             date_diffs = []
             prev_non_zero_demand_date = None
             for index, row in group.iterrows():

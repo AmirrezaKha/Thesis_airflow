@@ -26,11 +26,13 @@ class parent_model:
         self.results_probabilistic = []
     # Save Images function
     def save_images(self, folder, filename):
-        # Save the figure as an image in the "Images" folder
-        output_folder = f'images/{folder}'
+        parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        output_folder = os.path.join(parent_dir, 'images', folder)
         os.makedirs(output_folder, exist_ok=True)
         output_file = os.path.join(output_folder, f'{filename}.png')
+        
         plt.savefig(output_file, dpi=300)
+        print(f"Image saved at {output_file}")
 
 #######################################################################calculate_date_deviation########################################################################
     # calculate date_deviation column

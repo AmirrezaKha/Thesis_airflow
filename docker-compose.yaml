@@ -11,7 +11,7 @@
 #
 # Feel free to modify this file to suit your needs.
 ---
-version: '3.8'
+# version: '3.8'
 x-airflow-common:
   &airflow-common
   build: .
@@ -29,6 +29,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./data:/opt/airflow/data
+    - ./libraries:/opt/airflow/libraries
   user: "${AIRFLOW_UID}:${AIRFLOW_GID}"
   depends_on:
     postgres:
@@ -88,5 +89,3 @@ services:
 
 volumes:
   postgres-db-volume:
-
-

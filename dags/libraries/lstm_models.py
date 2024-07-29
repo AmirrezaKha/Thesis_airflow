@@ -13,9 +13,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.metrics import mean_absolute_error, log_loss, roc_curve,  roc_curve
 from sklearn.model_selection import  TimeSeriesSplit
 
-
 import pandas as pd
-import os
 from parent_models import *
 ###############################################################################################################################################
 # def create_lstm_model(input_shape, hidden_layer_size=50, activation='relu', alpha=0.001, learning_rate_init=0.01):

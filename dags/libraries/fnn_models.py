@@ -11,7 +11,6 @@ from sklearn.model_selection import TimeSeriesSplit, GridSearchCV, train_test_sp
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.neural_network import MLPClassifier
-import os
 
 from parent_models import *
 #######################################################################class FNN_model########################################################################

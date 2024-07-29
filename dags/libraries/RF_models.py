@@ -9,7 +9,6 @@ plt.rcParams.update({'font.size': 18})
 
 import seaborn as sns
 from sklearn.model_selection import TimeSeriesSplit, learning_curve, GridSearchCV, cross_val_predict
-import os
 
 from parent_models import *
 #######################################################################class RF_model########################################################################
