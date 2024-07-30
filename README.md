@@ -1,6 +1,6 @@
 # Master Thesis Project
 
-This project is part of my master's thesis and involves processing data provided in CSV files. The implementation utilizes Apache Airflow for workflow orchestration and PostgreSQL for data storage, all containerized using Docker.
+This project is part of my master's thesis and involves processing data provided in CSV files. The implementation utilizes Apache Airflow for workflow orchestration and PostgreSQL for data storage, all containerized using Docker. With the help of Airflow ass well as Docker, this code has the ability to create and save several tables in proper ways that can be used for aaplying Machine Learning models as well as data visualization.
 
 ## Project Overview
 
@@ -8,6 +8,7 @@ This project is part of my master's thesis and involves processing data provided
 - **Workflow Orchestration:** Apache Airflow
 - **Database:** PostgreSQL
 - **Containerization:** Docker
+- **Visualization:** Matplotlib & Power BI
 
 ## How to Run
 
