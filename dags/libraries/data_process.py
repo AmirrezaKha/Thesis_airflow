@@ -134,6 +134,12 @@ class dataProcessor:
                 date_diffs.append(days_diff)
             group['Days_since_last_non_zero_demand'] = date_diffs
             return group
+    
+    def get_a500(self):
+        self.get_postgres_data()
+        self.pre()
+        
+        return self.a500_df
 
     def preprocess_data(self):
         self.get_postgres_data()

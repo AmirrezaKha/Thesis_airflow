@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
+import json
 
 # Add the 'libraries' directory to the Python path
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -59,7 +60,7 @@ def load_data_to_postgres():
         print(f"Error: {e}")
         raise
 
-def data_transformation_and_save(postgres_params, source_table, destination_table):
+def data_transformation_and_save(postgres_params, source_table, intermediate_table, destination_table):
     """
     Executes the data transformation and saves the processed DataFrame to PostgreSQL.
 
@@ -79,7 +80,7 @@ def data_transformation_and_save(postgres_params, source_table, destination_tabl
 
         # Run the preprocess_data method to get the processed DataFrame
         mining_df = etl_processor.preprocess_data()
-
+        a500 = etl_processor.get_a500()
         # Verify the DataFrame content
         print(mining_df.head())
 
@@ -94,6 +95,7 @@ def data_transformation_and_save(postgres_params, source_table, destination_tabl
         engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
 
         # Write the DataFrame data to the PostgreSQL table with the specified name
+        a500.to_sql(intermediate_table, engine, if_exists='replace', index=False)
         mining_df.to_sql(destination_table, engine, if_exists='replace', index=False)
 
         print(f"Data transformation and saving to PostgreSQL table '{destination_table}' completed successfully!")
@@ -126,7 +128,7 @@ def classification_models(postgres_params, source_table, destination_table):
         - Converts all elements into strings to ensure uniformity and prevent data type issues.
 
     4. **Save Results**:
-        - Saves the compiled results into a new table named `classification_results` in the PostgreSQL database.
+        - Saves the compiled results into a new table named `classification_table` in the PostgreSQL database.
         - Replaces any existing table with the same name.
 
     5. **Error Handling**:
@@ -190,14 +192,14 @@ def classification_models(postgres_params, source_table, destination_table):
         print(f"Error processing results or saving to database: {e}")
         return
 
-def regression_models(postgres_params, source_table, destination_table):
+def regression_models(postgres_params, source_table, indices_table, destination_table):
     """
     This function performs the following tasks:
 
     1. **Database Connection**:
         - Establishes a connection to a PostgreSQL database using credentials provided in `postgres_params`.
         - Retrieves data from the specified `source_table` into a Pandas DataFrame.
-        - Fetches indices from the `classification_results` table to be used in regression models.
+        - Fetches indices from the `classification_table` table to be used in regression models.
 
     2. **Model Training**:
         - Initializes and trains two regression models (`rf_model` and `fnn_model`) on the data fetched, using the extracted indices from the classification results.
@@ -249,13 +251,24 @@ def regression_models(postgres_params, source_table, destination_table):
         query = f"SELECT * FROM {source_table}"
         mining_df = pd.read_sql(query, engine)
         
-        # Query to fetch indices from classification_results table
-        indices_query = "SELECT model, indices FROM classification_results"
+        # Query to fetch indices from the indices_table
+        indices_query = f"SELECT model, indices FROM  {indices_table}"
         indices_df = pd.read_sql(indices_query, engine)
 
-        # Extract indices from the classification_results table
-        indices_rf = eval(indices_df[indices_df['model'] == 'RF']['indices'].values[0])
-        indices_fnn = eval(indices_df[indices_df['model'] == 'FNN']['indices'].values[0])
+        # Extract indices from the indices_table
+        try:
+            indices_rf_str = indices_df[indices_df['model'] == 'RF']['indices'].values[0]
+            indices_fnn_str = indices_df[indices_df['model'] == 'FNN']['indices'].values[0]
+            
+            # Safely parse the indices using json.loads() if data is JSON encoded
+            indices_rf = json.loads(indices_rf_str)
+            indices_fnn = json.loads(indices_fnn_str)
+        except (IndexError, json.JSONDecodeError) as e:
+            print(f"Error extracting or parsing indices data: {e}")
+            return
+        except Exception as e:
+            print(f"Unexpected error extracting indices data: {e}")
+            return
     except Exception as e:
         print(f"Error connecting to the database or fetching data: {e}")
         return
@@ -265,11 +278,11 @@ def regression_models(postgres_params, source_table, destination_table):
 
     try:
         # Train regression models using the extracted indices
-        rf_model_instance = rf_model(mining_df, target_column, random_state, indices=indices_rf)
-        fnn_model_instance = fnn_model(mining_df, target_column, random_state, indices=indices_fnn)
+        rf_model_instance = rf_model(mining_df, target_column, random_state)
+        fnn_model_instance = fnn_model(mining_df, target_column, random_state)
 
-        indices_rf, best_model_rf, result_df_rf, train_mae_rf, test_mae_rf, best_train_error_rf, best_test_error_rf, best_iteration_rf = rf_model_instance.reg_main()
-        indices_fnn, best_model_fnn, result_df_fnn, train_mae_fnn, test_mae_fnn, best_train_error_fnn, best_test_error_fnn, best_iteration_fnn = fnn_model_instance.reg_main()
+        indices_rf, best_model_rf, result_df_rf, train_mae_rf, test_mae_rf, best_train_error_rf, best_test_error_rf, best_iteration_rf = rf_model_instance.demand_function(indices=indices_rf)
+        indices_fnn, best_model_fnn, result_df_fnn, train_mae_fnn, test_mae_fnn, best_train_error_fnn, best_test_error_fnn, best_iteration_fnn = fnn_model_instance.demand_function(indices=indices_fnn)
     except Exception as e:
         print(f"Error training models: {e}")
         return
@@ -331,6 +344,7 @@ data_transformation_task = PythonOperator(
             'POSTGRES_DB': os.getenv('POSTGRES_DB'),
         },
         'source_table': 'a500',
+        'intermediate_table': 'a500', 
         'destination_table': 'mining_table', 
     },
     dag=dag,
@@ -366,7 +380,8 @@ data_regression_task = PythonOperator(
             'POSTGRES_PORT': '5432',
             'POSTGRES_DB': os.getenv('POSTGRES_DB'),
         },
-        'source_table': 'classification_table', 
+        'source_table': 'mining_table', 
+        'indices_table': 'classification_table', 
         'destination_table': 'regression_table',
     },
     dag=dag,

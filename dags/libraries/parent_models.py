@@ -384,8 +384,8 @@ class parent_model:
     # Main is feeded here and return reults for actual demand values
     def demand_function(self, indices=None):
         # indices = self.temporal_prob_function()
-       indices, best_model, result_df = self.reg_main(target_column = self.target_column, indices = indices)
-       return indices, best_model, result_df
+       indices, best_model, result_df, train_mae, test_mae, best_train_error, best_test_error, best_iteration = self.reg_main(target_column = self.target_column, indices = indices)
+       return indices, best_model, result_df, train_mae, test_mae, best_train_error, best_test_error, best_iteration
 
 #######################################################################derivative_function########################################################################
     
@@ -394,8 +394,8 @@ class parent_model:
 
         # Calculate date deviation
         self.calculate_date_deviation()
-        indices, best_model, result_df = self.reg_main(target_column = 'Date_Deviation')
-        return indices, best_model, result_df
+        indices, best_model, result_df, train_mae, test_mae, best_train_error, best_test_error, best_iteration = self.reg_main(target_column = 'Date_Deviation')
+        return indices, best_model, result_df, train_mae, test_mae, best_train_error, best_test_error, best_iteration
 
 #######################################################################Confusion_test########################################################################
     
